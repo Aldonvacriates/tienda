@@ -1,12 +1,24 @@
-import { getMenu } from "@/lib/shopify";
-import { Menu } from "@/lib/shopify/types";
 import Link from "next/link";
+import { getMenu } from "@/lib/shopify";
+import type { Menu } from "@/lib/shopify/types";
 
 export default async function Footer() {
-  const menu = await getMenu("next-js-footer-menu");
+  let menu: Menu[] = [];
+
+  try {
+    menu = await getMenu("footer");
+  } catch (error) {
+    console.error("[Footer] Failed to load footer menu:", error);
+  }
+
+  const currentYear = new Date().getFullYear();
+
   return (
-    <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t dark:border-t-black">
-      <nav className="sm:ml-auto flex gap-4 sm:gap-6">
+    <footer className="w-full border-t px-4 py-6 text-sm text-neutral-500 dark:border-t-black dark:text-neutral-400">
+      <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-center sm:text-left">
+          &copy; {currentYear} Aldo Website LLC. All rights reserved.
+        </p>
         {menu.length > 0 ? (
           <ul className="hidden gap-6 text-sm md:flex md:items-center">
             {menu.map((item: Menu) => (
@@ -22,7 +34,7 @@ export default async function Footer() {
             ))}
           </ul>
         ) : null}
-      </nav>
+      </div>
     </footer>
   );
 }
