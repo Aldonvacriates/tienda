@@ -1,8 +1,26 @@
-import { SHOPIFY_GRAPHQL_API_ENDPOINT, TAGS } from "../constants";
+import {
+  HIDDEN_PRODUCT_TAG,
+  SHOPIFY_GRAPHQL_API_ENDPOINT,
+  TAGS,
+} from "../constants";
 import { isShopifyError, ShopifyErrorLike } from "../type-guards";
 import { ensureStartsWith } from "../utils";
+import { getCollectionProductsQuery, getCollectionsQuery } from "./queries/collection";
 import { getMenuQuery } from "./queries/menu";
-import { Menu, ShopifyMenuOperation } from "./types";
+import { getProductsQuery } from "./queries/products";
+import type {
+  Collection,
+  Connection,
+  Image,
+  Menu,
+  Product,
+  ShopifyCollection,
+  ShopifyCollectionProductsOperation,
+  ShopifyCollectionsOperation,
+  ShopifyMenuOperation,
+  ShopifyProduct,
+  ShopifyProductsOperation,
+} from "./types";
 
 const domain = process.env.SHOPIFY_STORE_DOMAIN
   ? ensureStartsWith(process.env.SHOPIFY_STORE_DOMAIN, "https://")
@@ -71,6 +89,58 @@ export async function shopifyFetch<T>({
   }
 }
 
+function removeEdgesAndNodes<T>(array: Connection<T>): T[] {
+  return array.edges.map((edge) => edge?.node);
+}
+
+function reshapeImages(images: Connection<Image>, productTitle: string) {
+  const flattened = removeEdgesAndNodes(images);
+
+  return flattened.map((image) => {
+    const filename = image.url.match(/.*\/(.*)\..*/)?.[1];
+
+    return {
+      ...image,
+      altText: image.altText || `${productTitle} - ${filename}`,
+    };
+  });
+}
+function reshapeProduct(
+  product: ShopifyProduct,
+  filterHiddenProducts: boolean = true
+) {
+  if (
+    !product ||
+    (filterHiddenProducts && product.tags.includes(HIDDEN_PRODUCT_TAG))
+  ) {
+    return undefined;
+  }
+
+  const { images, variants, ...rest } = product;
+
+  return {
+    ...rest,
+    images: reshapeImages(images, product.title),
+    variants: removeEdgesAndNodes(variants),
+  };
+}
+
+function reshapeProducts(products: ShopifyProduct[]) {
+  const reshapedProducts = [];
+
+  for (const product of products) {
+    if (product) {
+      const reshapedProduct = reshapeProduct(product);
+
+      if (reshapedProduct) {
+        reshapedProducts.push(reshapedProduct);
+      }
+    }
+  }
+
+  return reshapedProducts;
+}
+
 export async function getMenu(handle: string): Promise<Menu[]> {
   const res = await shopifyFetch<ShopifyMenuOperation>({
     query: getMenuQuery,
@@ -88,5 +158,115 @@ export async function getMenu(handle: string): Promise<Menu[]> {
         .replace("/collections/", "/search")
         .replace("/pages", ""),
     })) || []
+  );
+}
+
+export async function getProducts({
+  query,
+  reverse,
+  sortKey,
+}: {
+  query?: string;
+  reverse?: boolean;
+  sortKey?: string;
+}): Promise<Product[]> {
+  const res = await shopifyFetch<ShopifyProductsOperation>({
+    query: getProductsQuery,
+    tags: [TAGS.products],
+    variables: {
+      query,
+      reverse,
+      sortKey,
+    },
+  });
+
+  return reshapeProducts(removeEdgesAndNodes(res.body.data.products));
+}
+
+function reshapeCollection(
+  collection: ShopifyCollection
+): Collection | undefined {
+  if (!collection) return undefined;
+
+  return {
+    ...collection,
+    path: `/search/${collection.handle}`,
+  };
+}
+
+function reshapeCollections(collections: ShopifyCollection[]) {
+  const reshapedCollections = [];
+
+  for (const collection of collections) {
+    if (collection) {
+      const reshapedCollection = reshapeCollection(collection);
+
+      if (reshapedCollection) {
+        reshapedCollections.push(reshapedCollection);
+      }
+    }
+  }
+
+  return reshapedCollections;
+}
+
+export async function getCollections(): Promise<Collection[]> {
+  const res = await shopifyFetch<ShopifyCollectionsOperation>({
+    query: getCollectionsQuery,
+    tags: [TAGS.collections],
+  });
+
+  const connection = res.body?.data?.collections;
+  const shopifyCollections = connection ? removeEdgesAndNodes(connection) : [];
+
+  const collections = [
+    {
+      handle: "",
+      title: "All",
+      description: "All products",
+      seo: {
+        title: "All",
+        description: "All products",
+      },
+      path: "/search",
+      updatedAt: new Date().toISOString(),
+    },
+    // Filter out the hidden products
+    ...reshapeCollections(shopifyCollections).filter(
+      (collection) => !collection.handle.startsWith("hidden")
+    ),
+  ];
+
+  return collections;
+}
+
+export async function getCollectionProducts({
+  collection,
+  reverse,
+  sortKey,
+}: {
+  collection: string;
+  reverse?: boolean;
+  sortKey?: string;
+}): Promise<Product[]> {
+  const res = await shopifyFetch<ShopifyCollectionProductsOperation>({
+    query: getCollectionProductsQuery,
+    tags: [TAGS.collections, TAGS.products],
+    variables: {
+      handle: collection,
+      reverse,
+      sortKey,
+    },
+  });
+
+  const collectionNode = res.body?.data?.collection;
+
+  if (!collectionNode) {
+    console.warn(`No collection found for "${collection}"`);
+    return [];
+  }
+
+  return reshapeProducts(
+    removeEdgesAndNodes(collectionNode.products)
   );
 }

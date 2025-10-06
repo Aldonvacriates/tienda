@@ -11,7 +11,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Aldo Website Shop",
-  description: "Aldo Website LLC",
+  description: "The best products for the best prices.",
 };
 
 export default async function RootLayout({
