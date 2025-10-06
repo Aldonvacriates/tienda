@@ -155,7 +155,7 @@ export async function getMenu(handle: string): Promise<Menu[]> {
       title: item.title,
       path: item.url
         .replace(domain, "")
-        .replace("/collections/", "/search")
+        .replace("/collections/", "/search/")
         .replace("/pages", ""),
     })) || []
   );

@@ -1,15 +1,15 @@
 import { getMenu } from "@/lib/shopify";
 import { Menu } from "@/lib/shopify/types";
 import Link from "next/link";
-import MobileMenu from "./mobilemenu";
 import Search from "./search";
 import LogoSquare from "@/components/logo-square";
+import MobileMenu from "./mobile-menu";
+// import CartModal from "@/components/cart/modal";
 
 export async function Navbar() {
   const menu = await getMenu("next-js-frontend-menu");
-
   return (
-    <nav className="flex items-center justify-between p-4 lg:px-6">
+    <nav className="flex items-center justify-between p-4 lg:px-6 sticky top-0 backdrop-blur-sm z-[999]">
       <div className="block flex-none md:hidden">
         <MobileMenu menu={menu} />
       </div>
@@ -42,10 +42,10 @@ export async function Navbar() {
             </ul>
           ) : null}
         </div>
-        <div className="hidden lg:flex justify-center lg:w-1/3">
+        <div className="hidden justify-center md:flex md:w-1/3">
           <Search />
         </div>
-        <div className="ml-auto flex w-full items-center justify-end md:w-1/3">
+        <div className="flex justify-end md:w-1/3">
           {/* <CartModal /> */}
         </div>
       </div>
