@@ -107,14 +107,20 @@ export async function removeItem(
   }
 }
 
-export async function redirectToCheckout(): Promise<string | undefined> {
+export async function redirectToCheckout(): Promise<void> {
   const cookieStore = await cookies();
   const cartId = cookieStore.get("cartId")?.value;
-  if (!cartId) return "Missing cart ID";
+  if (!cartId) {
+    // Optionally: create a new cart then return (or redirect elsewhere)
+    return;
+  }
 
   const cart = (await getCart(cartId)) as Cart | null;
-  if (!cart) return "Error fetching cart";
+  if (!cart) {
+    return;
+  }
 
+  // Next.js redirect throws and never returns
   redirect(cart.checkoutUrl);
 }
 
