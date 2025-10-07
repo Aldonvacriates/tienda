@@ -1,6 +1,6 @@
 "use client";
 
-import { Product, ProductVariant } from "@/lib/shopify/types";
+import type { Product, ProductVariant } from "@/lib/shopify/types";
 import { useProduct } from "../product/product-context";
 import { useCart } from "./cart-context";
 import { useFormState } from "react-dom";
@@ -45,9 +45,7 @@ function SubmitButton({
   return (
     <button
       aria-label="Add to cart"
-      className={clsx(buttonClasses, {
-        "hover:opacity-90": true,
-      })}
+      className={clsx(buttonClasses, { "hover:opacity-90": true })}
     >
       <div className="absolute left-0 ml-4">
         <PlusIcon className="h-5" />
@@ -61,22 +59,34 @@ export function AddToCart({ product }: { product: Product }) {
   const { variants, availableForSale } = product;
   const { addCartItem } = useCart();
   const { state } = useProduct();
-  const [message, formAction] = useFormState(addItem, null);
-  const variant = variants.find((variant: ProductVariant) =>
-    variant.selectedOptions.every(
+
+  // Server action signature: (prevState, selectedVariantId: string | undefined) => Promise<string | void>
+  // State type becomes string | undefined; payload type is string | undefined (we bind it below).
+  const [message, formAction] = useFormState<
+    string | undefined,
+    string | undefined
+  >(addItem, undefined);
+
+  const variant = variants.find((v: ProductVariant) =>
+    v.selectedOptions.every(
       (option) => option.value === state[option.name.toLowerCase()]
     )
   );
+
   const defaultVariantId = variants.length === 1 ? variants[0]?.id : undefined;
-  const selectedVariantId = variant?.id || defaultVariantId;
+  const selectedVariantId = variant?.id ?? defaultVariantId;
+
   const actionWithVariant = formAction.bind(null, selectedVariantId);
-  const finalVariant = variants.find(
-    (variant) => variant.id === selectedVariantId
-  )!;
+
+  const finalVariant = variants.find((v) => v.id === selectedVariantId);
+
   return (
     <form
       action={async () => {
-        addCartItem(finalVariant, product);
+        // Optimistic update only if we truly have a variant to add.
+        if (finalVariant) {
+          addCartItem(finalVariant, product);
+        }
         await actionWithVariant();
       }}
     >
@@ -84,8 +94,8 @@ export function AddToCart({ product }: { product: Product }) {
         availableForSale={availableForSale}
         selectedVariantId={selectedVariantId}
       />
-      <p className="sr-only" role="status" aria-label="polite">
-        {message}
+      <p className="sr-only" role="status" aria-live="polite">
+        {message ?? null}
       </p>
     </form>
   );
