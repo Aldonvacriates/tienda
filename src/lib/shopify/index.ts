@@ -5,7 +5,7 @@ import {
   TAGS,
 } from "../constants";
 import { isShopifyError } from "../type-guards";
-import { ensureStartWith } from "../utils";
+import { ensureStartsWith } from "../utils";
 import {
   addToCartMutation,
   createCartMutation,
@@ -53,7 +53,7 @@ import { revalidateTag } from "next/cache";
 import { getPageQuery, getPagesQuery } from "./queries/page";
 
 const domain = process.env.SHOPIFY_STORE_DOMAIN
-  ? ensureStartWith(process.env.SHOPIFY_STORE_DOMAIN, "https://")
+  ? ensureStartsWith(process.env.SHOPIFY_STORE_DOMAIN, "https://")
   : "";
 const endpoint = `${domain}${SHOPIFY_GRAPHQL_API_ENDPOINT}`;
 const key = process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN;
