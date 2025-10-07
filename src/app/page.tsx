@@ -1,4 +1,4 @@
-// src/app/page.tsx (or wherever this component lives)
+// src/app/page.tsx 
 import Link from "next/link";
 import Image from "next/image";
 
@@ -45,15 +45,19 @@ export default function HomePage() {
           </div>
 
           {/* Hero banner */}
-          <Image
-            src="/banner.png"
-            width={1270}
-            height={300}
-            alt="Seasonal hero banner with fashion highlights"
-            priority
-            className="mx-auto rounded-t-xl object-cover"
-            sizes="(max-width: 1280px) 100vw, 1270px"
-          />
+          <video
+            autoPlay
+            muted
+            playsInline
+            controls={false}
+            loop={false}
+            poster="/banner.png"
+            className="mx-auto rounded-t-xl object-cover w-full max-w-[1270px] h-[620px]"
+          >
+            <source src="/banner.webm" type="video/webm" />
+            <source src="/banner.mp4" type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
         </div>
       </section>
 
