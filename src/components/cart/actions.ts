@@ -36,7 +36,7 @@ export async function addItem(
       { merchandiseId: selectedVariantId, quantity: 1 },
     ]);
     revalidateTag(TAGS.cart);
-  } catch (_err) {
+  } catch {
     return "Error adding item to cart";
   }
 }
@@ -97,7 +97,7 @@ export async function removeItem(
     } else {
       return "Item not found in cart";
     }
-  } catch (_err) {
+  } catch {
     return "Error removing item from cart";
   }
 }

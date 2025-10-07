@@ -1,17 +1,25 @@
 "use client";
-import { CartItem } from "@/lib/shopify/types";
+import type { CartItem } from "@/lib/shopify/types";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { useFormState } from "react-dom";
 import { removeItem } from "./actions";
+
+type OptimisticUpdateFn = (merchandiseId: string, op: "delete") => void;
 
 export function DeleteItemButton({
   item,
   optimisticUpdate,
 }: {
   item: CartItem;
-  optimisticUpdate: any;
+  optimisticUpdate: OptimisticUpdateFn;
 }) {
-  const [message, formAction] = useFormState(removeItem, null);
+  // Server action: (prevState, merchandiseId: string) => Promise<string | void>
+  // State type is string | undefined; payload type is string
+  const [message, formAction] = useFormState<string | undefined, string>(
+    removeItem,
+    undefined
+  );
+
   const merchandiseId = item.merchandise.id;
   const actionWithVariant = formAction.bind(null, merchandiseId);
 
@@ -35,4 +43,3 @@ export function DeleteItemButton({
     </form>
   );
 }
-
