@@ -1,7 +1,6 @@
 import OpengraphImage from "@/components/opengraph-image";
 
-export const runtime = "nodejs"; // forces Node runtime
-export const dynamic = "force-static"; // guarantees SSG
+export const runtime = "edge";
 
 export default async function Image() {
   return await OpengraphImage();
