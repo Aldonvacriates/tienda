@@ -64,8 +64,10 @@ export async function updateItemQuantity(
       if (quantity === 0) {
         await removeFromCart(cartId, [lineItem.id]);
       } else {
-        // Most wrappers only need { id, quantity } to update line quantity
-        await updateCart(cartId, [{ id: lineItem.id, quantity }]);
+        // Your updateCart requires merchandiseId in the payload
+        await updateCart(cartId, [
+          { id: lineItem.id, merchandiseId, quantity },
+        ]);
       }
     } else if (quantity > 0) {
       await addToCart(cartId, [{ merchandiseId, quantity }]);
