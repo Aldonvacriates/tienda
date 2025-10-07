@@ -12,7 +12,7 @@ import { revalidateTag } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-/** Minimal types used here; extend if your lib returns more fields */
+/** Minimal shapes used by these actions. Extend if your lib returns more. */
 type CartLine = {
   id: string;
   merchandise: { id: string };
@@ -27,7 +27,7 @@ type Cart = {
 export async function addItem(
   _prevState: unknown,
   selectedVariantId: string | undefined
-): Promise<string | void> {
+): Promise<string | undefined> {
   const cookieStore = await cookies();
   const cartId = cookieStore.get("cartId")?.value;
   if (!cartId || !selectedVariantId) return "Error adding item to cart";
@@ -45,7 +45,7 @@ export async function addItem(
 export async function updateItemQuantity(
   _prevState: unknown,
   payload: { merchandiseId: string; quantity: number }
-): Promise<string | void> {
+): Promise<string | undefined> {
   const cookieStore = await cookies();
   const cartId = cookieStore.get("cartId")?.value;
   if (!cartId) return "Missing cart ID";
@@ -64,7 +64,7 @@ export async function updateItemQuantity(
       if (quantity === 0) {
         await removeFromCart(cartId, [lineItem.id]);
       } else {
-        // Your updateCart requires merchandiseId in the payload
+        // Your helper expects merchandiseId on the update payload.
         await updateCart(cartId, [
           { id: lineItem.id, merchandiseId, quantity },
         ]);
@@ -83,7 +83,7 @@ export async function updateItemQuantity(
 export async function removeItem(
   _prevState: unknown,
   merchandiseId: string
-): Promise<string | void> {
+): Promise<string | undefined> {
   const cookieStore = await cookies();
   const cartId = cookieStore.get("cartId")?.value;
   if (!cartId) return "Missing cart ID";
@@ -107,7 +107,7 @@ export async function removeItem(
   }
 }
 
-export async function redirectToCheckout(): Promise<string | void> {
+export async function redirectToCheckout(): Promise<string | undefined> {
   const cookieStore = await cookies();
   const cartId = cookieStore.get("cartId")?.value;
   if (!cartId) return "Missing cart ID";
@@ -118,7 +118,7 @@ export async function redirectToCheckout(): Promise<string | void> {
   redirect(cart.checkoutUrl);
 }
 
-export async function createCartAndSetCookie(): Promise<string | void> {
+export async function createCartAndSetCookie(): Promise<string | undefined> {
   const cart = (await createCart()) as { id?: string } | null;
   if (!cart?.id) return "Error creating cart";
 
