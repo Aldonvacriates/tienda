@@ -48,7 +48,7 @@ import {
   ShopifyRemoveFromCartOperation,
   ShopifyUpdateCartOperation,
 } from "./types";
-import { headers } from "next/headers";
+// ❌ removed: import { headers } from "next/headers";
 import { revalidateTag } from "next/cache";
 import { getPageQuery, getPagesQuery } from "./queries/page";
 
@@ -57,9 +57,11 @@ const domain = process.env.SHOPIFY_STORE_DOMAIN
   : "";
 const endpoint = `${domain}${SHOPIFY_GRAPHQL_API_ENDPOINT}`;
 const key = process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN;
+
 type ExtractVariables<T> = T extends { variables: object }
   ? T["variables"]
   : never;
+
 export async function shopifyFetch<T>({
   cache = "force-cache",
   headers,
@@ -132,6 +134,7 @@ function reshapeImages(images: Connection<Image>, productTitle: string) {
     };
   });
 }
+
 function reshapeProduct(
   product: ShopifyProduct,
   filterHiddenProducts: boolean = true
@@ -151,6 +154,7 @@ function reshapeProduct(
     variants: removeEdgesAndNodes(variants),
   };
 }
+
 function reshapeProducts(products: ShopifyProduct[]) {
   const reshapedProducts = [];
 
@@ -166,6 +170,7 @@ function reshapeProducts(products: ShopifyProduct[]) {
 
   return reshapedProducts;
 }
+
 export async function getMenu(handle: string): Promise<Menu[]> {
   const res = await shopifyFetch<ShopifyMenuOperation>({
     query: getMenuQuery,
@@ -296,9 +301,7 @@ export async function getProduct(handle: string): Promise<Product | undefined> {
   const res = await shopifyFetch<ShopifyProductOperation>({
     query: getProductQuery,
     tags: [TAGS.products],
-    variables: {
-      handle,
-    },
+    variables: { handle },
   });
   return reshapeProduct(res.body.data.product, false);
 }
@@ -309,9 +312,7 @@ export async function getProductRecommendations(
   const res = await shopifyFetch<ShopifyProductRecommendationsOperation>({
     query: getProductRecommendationsQuery,
     tags: [TAGS.products],
-    variables: {
-      productId,
-    },
+    variables: { productId },
   });
 
   return reshapeProducts(res.body.data.productRecommendations);
@@ -365,10 +366,7 @@ export async function removeFromCart(
 ): Promise<Cart> {
   const res = await shopifyFetch<ShopifyRemoveFromCartOperation>({
     query: removeFromCartMutation,
-    variables: {
-      cartId,
-      lineIds,
-    },
+    variables: { cartId, lineIds },
     cache: "no-store",
   });
 
@@ -381,10 +379,7 @@ export async function updateCart(
 ): Promise<Cart> {
   const res = await shopifyFetch<ShopifyUpdateCartOperation>({
     query: editCartItemsMutation,
-    variables: {
-      cartId,
-      lines,
-    },
+    variables: { cartId, lines },
     cache: "no-store",
   });
 
@@ -397,10 +392,7 @@ export async function addToCart(
 ): Promise<Cart> {
   const res = await shopifyFetch<ShopifyAddToCartOperation>({
     query: addToCartMutation,
-    variables: {
-      cartId,
-      lines,
-    },
+    variables: { cartId, lines },
     cache: "no-cache",
   });
 
@@ -409,9 +401,7 @@ export async function addToCart(
 
 // This is called from `app/api/revalidate.ts` so providers can control revalidation logic.
 export async function revalidate(req: NextRequest): Promise<NextResponse> {
-  // We always need to respond with a 200 status code to Shopify,
-  // otherwise it will continue to retry the request.
-
+  // Always respond 200 so Shopify does not retry.
   const collectionWebhooks = [
     "collections/create",
     "collections/delete",
@@ -422,7 +412,9 @@ export async function revalidate(req: NextRequest): Promise<NextResponse> {
     "products/delete",
     "products/update",
   ];
-  const topic = headers().get("x-shopify-topic") || "unknown";
+
+  // ✅ Use the request's headers (avoids async global headers())
+  const topic = req.headers.get("x-shopify-topic") ?? "unknown";
   const secret = req.nextUrl.searchParams.get("secret");
   const isCollectionUpdate = collectionWebhooks.includes(topic);
   const isProductUpdate = productWebhooks.includes(topic);
@@ -433,7 +425,7 @@ export async function revalidate(req: NextRequest): Promise<NextResponse> {
   }
 
   if (!isCollectionUpdate && !isProductUpdate) {
-    // We don't need to revalidate anything for any other topics.
+    // Nothing to revalidate for other topics.
     return NextResponse.json({ status: 200 });
   }
 
