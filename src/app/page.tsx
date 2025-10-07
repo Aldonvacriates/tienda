@@ -1,14 +1,8 @@
+// src/app/page.tsx (or wherever this component lives)
 import Link from "next/link";
+import Image from "next/image";
 
-export const metadata = {
-  description:
-    "Modern web solutions and digital assets for creators and businesses.",
-  openGraph: {
-    type: "website",
-  },
-};
-
-export default function Home() {
+export default function HomePage() {
   return (
     <main className="flex-1">
       <section className="w-full pt-12 md:pt-24 lg:pt-32 border-b">
