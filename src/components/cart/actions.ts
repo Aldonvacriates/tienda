@@ -28,7 +28,8 @@ export async function addItem(
   _prevState: unknown,
   selectedVariantId: string | undefined
 ): Promise<string | void> {
-  const cartId = cookies().get("cartId")?.value;
+  const cookieStore = await cookies();
+  const cartId = cookieStore.get("cartId")?.value;
   if (!cartId || !selectedVariantId) return "Error adding item to cart";
 
   try {
@@ -45,7 +46,8 @@ export async function updateItemQuantity(
   _prevState: unknown,
   payload: { merchandiseId: string; quantity: number }
 ): Promise<string | void> {
-  const cartId = cookies().get("cartId")?.value;
+  const cookieStore = await cookies();
+  const cartId = cookieStore.get("cartId")?.value;
   if (!cartId) return "Missing cart ID";
 
   const { merchandiseId, quantity } = payload;
@@ -80,7 +82,8 @@ export async function removeItem(
   _prevState: unknown,
   merchandiseId: string
 ): Promise<string | void> {
-  const cartId = cookies().get("cartId")?.value;
+  const cookieStore = await cookies();
+  const cartId = cookieStore.get("cartId")?.value;
   if (!cartId) return "Missing cart ID";
 
   try {
@@ -103,7 +106,8 @@ export async function removeItem(
 }
 
 export async function redirectToCheckout(): Promise<string | void> {
-  const cartId = cookies().get("cartId")?.value;
+  const cookieStore = await cookies();
+  const cartId = cookieStore.get("cartId")?.value;
   if (!cartId) return "Missing cart ID";
 
   const cart = (await getCart(cartId)) as Cart | null;
@@ -116,7 +120,8 @@ export async function createCartAndSetCookie(): Promise<string | void> {
   const cart = (await createCart()) as { id?: string } | null;
   if (!cart?.id) return "Error creating cart";
 
-  cookies().set("cartId", cart.id, {
+  const cookieStore = await cookies();
+  cookieStore.set("cartId", cart.id, {
     path: "/",
     httpOnly: true,
     sameSite: "lax",
