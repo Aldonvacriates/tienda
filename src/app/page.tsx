@@ -52,11 +52,11 @@ export default function HomePage() {
             controls={false}
             loop={false}
             poster="/banner.png"
-            className="mx-auto rounded-t-xl object-cover w-full max-w-[1270px] h-[300px]"
+            className="mx-auto rounded-t-xl object-cover w-full max-w-[1270px] h-[300px] bg-black fade-in-from-black"
           >
             <source src="/banner.webm" type="video/webm" />
             <source src="/banner.mp4" type="video/mp4" />
-            Your browser does not support the video tag.
+            
           </video>
         </div>
       </section>
