@@ -51,7 +51,7 @@ export default function HomePage() {
             playsInline
             controls={false}
             loop={false}
-            poster="/banner.png"
+            // poster="/banner.png"
             className="mx-auto rounded-t-xl object-cover w-full max-w-[1270px] h-[300px] bg-black fade-in-from-black"
           >
             <source src="/banner.webm" type="video/webm" />
