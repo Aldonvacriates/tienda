@@ -13,8 +13,31 @@ import { Analytics } from "@vercel/analytics/react";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://aldowebsite.shop"),
   title: "Aldo Website Shop",
-  description: "The best products for the best prices.",
+  description: "Premium digital products to power your next big idea.",
+  openGraph: {
+    title: "Aldo Website Shop",
+    description: "Shop curated digital assets and tools from Aldo Website.",
+    url: "https://aldowebsite.shop",
+    siteName: "Aldo Website Shop",
+    images: [
+      {
+        url: "/og.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Featured digital products from Aldo Website Shop",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Aldo Website Shop",
+    description: "Shop curated digital assets and tools from Aldo Website.",
+    images: ["/og.jpg"],
+  },
 };
 
 export default async function RootLayout({
