@@ -6,7 +6,8 @@ import Footer from "@/components/layout/footer";
 import { CartProvider } from "@/components/cart/cart-context";
 import { cookies } from "next/headers";
 import { getCart } from "@/lib/shopify";
-import { Analytics } from '@vercel/analytics/next';
+import { Analytics } from "@vercel/analytics/react";
+
 
 
 const inter = Inter({ subsets: ["latin"] });
@@ -29,9 +30,9 @@ export default async function RootLayout({
         <CartProvider cartPromise={cart}>
           <Navbar />
           {children}
-          <Analytics />
           <Footer />
         </CartProvider>
+        <Analytics />
       </body>
     </html>
   );
