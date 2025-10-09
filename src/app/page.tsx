@@ -62,7 +62,7 @@ export default function HomePage() {
             width="1270"
             height="300"
             alt="Hero"
-            className="mx-auto rounded-t-xl object-cover w-full max-w-[1270px] h-[300px] bg-black fade-in-from-black"
+            className="mx-auto rounded-t-xl object-cover"
           /> */}
         </div>
       </section>
