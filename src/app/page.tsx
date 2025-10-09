@@ -45,7 +45,7 @@ export default function HomePage() {
           </div>
 
           {/* Hero banner */}
-          {/* <video
+          <video
             autoPlay
             muted
             playsInline
@@ -56,14 +56,14 @@ export default function HomePage() {
           >
             <source src="/banner.webm" type="video/webm" />
             <source src="/banner.mp4" type="video/mp4" />
-          </video> */}
-          <Image
+          </video>
+          {/* <Image
             src="/banner.png"
             width="1270"
             height="300"
             alt="Hero"
-            className="mx-auto rounded-t-xl object-cover"
-          />
+            className="mx-auto rounded-t-xl object-cover w-full max-w-[1270px] h-[300px] bg-black fade-in-from-black"
+          /> */}
         </div>
       </section>
 
