@@ -1,19 +1,20 @@
 "use client";
 
-import type { Product, ProductVariant } from "@/lib/shopify/types";
+import type { Product, ProductVariant } from "@/lib/firebase/types";
 import { useProduct } from "../product/product-context";
 import { useCart } from "./cart-context";
-import { useFormState } from "react-dom";
+import { useState } from "react";
 import clsx from "clsx";
 import { PlusIcon } from "@heroicons/react/24/outline";
-import { addItem } from "./actions";
 
 function SubmitButton({
   availableForSale,
   selectedVariantId,
+  onClick,
 }: {
   availableForSale: boolean;
   selectedVariantId: string | undefined;
+  onClick: () => void;
 }) {
   const buttonClasses =
     "relative flex w-full items-center justify-center rounded-full bg-blue-600 p-4 tracking-wide text-white";
@@ -45,6 +46,8 @@ function SubmitButton({
   return (
     <button
       aria-label="Add to cart"
+      type="button"
+      onClick={onClick}
       className={clsx(buttonClasses, { "hover:opacity-90": true })}
     >
       <div className="absolute left-0 ml-4">
@@ -59,13 +62,7 @@ export function AddToCart({ product }: { product: Product }) {
   const { variants, availableForSale } = product;
   const { addCartItem } = useCart();
   const { state } = useProduct();
-
-  // Server action signature: (prevState, selectedVariantId: string | undefined) => Promise<string | void>
-  // State type becomes string | undefined; payload type is string | undefined (we bind it below).
-  const [message, formAction] = useFormState<
-    string | undefined,
-    string | undefined
-  >(addItem, undefined);
+  const [message, setMessage] = useState<string | undefined>(undefined);
 
   const variant = variants.find((v: ProductVariant) =>
     v.selectedOptions.every(
@@ -76,27 +73,25 @@ export function AddToCart({ product }: { product: Product }) {
   const defaultVariantId = variants.length === 1 ? variants[0]?.id : undefined;
   const selectedVariantId = variant?.id ?? defaultVariantId;
 
-  const actionWithVariant = formAction.bind(null, selectedVariantId);
-
   const finalVariant = variants.find((v) => v.id === selectedVariantId);
 
   return (
-    <form
-      action={async () => {
-        // Optimistic update only if we truly have a variant to add.
-        if (finalVariant) {
-          addCartItem(finalVariant, product);
-        }
-        await actionWithVariant();
-      }}
-    >
+    <div>
       <SubmitButton
         availableForSale={availableForSale}
         selectedVariantId={selectedVariantId}
+        onClick={() => {
+          if (!finalVariant) {
+            setMessage("Please select an option.");
+            return;
+          }
+          addCartItem(finalVariant, product);
+          setMessage("Added to cart.");
+        }}
       />
       <p className="sr-only" role="status" aria-live="polite">
         {message ?? null}
       </p>
-    </form>
+    </div>
   );
 }

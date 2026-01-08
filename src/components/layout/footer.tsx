@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { getMenu } from "@/lib/shopify";
-import type { Menu } from "@/lib/shopify/types";
+import { getMenu } from "@/lib/site";
+import type { Menu } from "@/lib/firebase/types";
 
 export default async function Footer() {
   let menu: Menu[] = [];

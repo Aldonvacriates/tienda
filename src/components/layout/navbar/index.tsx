@@ -1,5 +1,5 @@
-import { getMenu } from "@/lib/shopify";
-import { Menu } from "@/lib/shopify/types";
+import { getMenu } from "@/lib/site";
+import { Menu } from "@/lib/firebase/types";
 import Link from "next/link";
 import Search from "./search";
 import LogoSquare from "@/components/logo-square";

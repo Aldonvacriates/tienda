@@ -1,4 +1,4 @@
-import { getCollections } from "@/lib/shopify";
+import { getCollections } from "@/lib/firebase/storefront";
 import FilterList from "./filter";
 import { Suspense } from "react";
 import clsx from "clsx";

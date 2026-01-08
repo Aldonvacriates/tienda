@@ -1,15 +1,23 @@
 "use client";
-/* eslint-disable react-hooks/exhaustive-deps */
-import { Cart, CartItem, Product, ProductVariant } from "@/lib/shopify/types";
-import { createContext, use, useContext, useMemo, useOptimistic } from "react";
+import {
+  createContext,
+  useContext,
+  useMemo,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
+import { Cart, CartItem, Product, ProductVariant } from "@/lib/firebase/types";
 
 type UpdateType = "plus" | "minus" | "delete";
 
 type CartContextType = {
-  cart: Cart | undefined;
+  cart: Cart;
   updateCartItem: (merchandiseId: string, updateType: UpdateType) => void;
   addCartItem: (variant: ProductVariant, product: Product) => void;
+  clearCart: () => void;
 };
+
 type CartAction =
   | {
       type: "UPDATE_ITEM";
@@ -22,9 +30,16 @@ type CartAction =
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+function createCartId(): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return `cart-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
 function createEmptyCart(): Cart {
   return {
-    id: undefined,
+    id: createCartId(),
     checkoutUrl: "",
     totalQuantity: 0,
     lines: [],
@@ -98,6 +113,13 @@ function createOrUpdateCartItem(
 ): CartItem {
   const quantity = existingItem ? existingItem.quantity + 1 : 1;
   const totalAmount = calculateItemCost(quantity, variant.price.amount);
+  const featuredImage =
+    product.featuredImage ?? {
+      url: "/Logo.png",
+      altText: product.title,
+      width: 1200,
+      height: 1200,
+    };
 
   return {
     id: existingItem?.id,
@@ -116,14 +138,14 @@ function createOrUpdateCartItem(
         id: product.id,
         handle: product.handle,
         title: product.title,
-        featuredImage: product.featuredImage,
+        featuredImage,
       },
     },
   };
 }
 
-function cartReducer(state: Cart | undefined, action: CartAction): Cart {
-  const currentCart = state || createEmptyCart();
+function cartReducer(state: Cart, action: CartAction): Cart {
+  const currentCart = state;
 
   switch (action.type) {
     case "UPDATE_ITEM": {
@@ -182,37 +204,63 @@ function cartReducer(state: Cart | undefined, action: CartAction): Cart {
   }
 }
 
-export function CartProvider({
-  children,
-  cartPromise,
-}: {
-  children: React.ReactNode;
-  cartPromise: Promise<Cart | undefined>;
-}) {
-  const initialCart = use(cartPromise);
-  const [optimisticCart, updateOptimisticCart] = useOptimistic(
-    initialCart,
-    cartReducer
+export function CartProvider({ children }: { children: React.ReactNode }) {
+  const [cart, setCart] = useState<Cart>(createEmptyCart());
+
+  useEffect(() => {
+    const stored = localStorage.getItem("cart");
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored) as Cart;
+        if (parsed?.lines) {
+          setCart({
+            ...parsed,
+            id: parsed.id ?? createCartId(),
+          });
+        }
+      } catch (error) {
+        console.error("Failed to parse cart from storage", error);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("cart", JSON.stringify(cart));
+  }, [cart]);
+
+  const updateCartItem = useCallback(
+    (merchandiseId: string, updateType: UpdateType) => {
+      setCart((current) =>
+        cartReducer(current, {
+          type: "UPDATE_ITEM",
+          payload: { merchandiseId, updateType },
+        })
+      );
+    },
+    []
   );
 
-  const updateCartItem = (merchandiseId: string, updateType: UpdateType) => {
-    updateOptimisticCart({
-      type: "UPDATE_ITEM",
-      payload: { merchandiseId, updateType },
-    });
-  };
+  const addCartItem = useCallback((variant: ProductVariant, product: Product) => {
+    setCart((current) =>
+      cartReducer(current, {
+        type: "ADD_ITEM",
+        payload: { variant, product },
+      })
+    );
+  }, []);
 
-  const addCartItem = (variant: ProductVariant, product: Product) => {
-    updateOptimisticCart({ type: "ADD_ITEM", payload: { variant, product } });
-  };
+  const clearCart = useCallback(() => {
+    setCart(createEmptyCart());
+  }, []);
 
   const value = useMemo(
     () => ({
-      cart: optimisticCart,
+      cart,
       updateCartItem,
       addCartItem,
+      clearCart,
     }),
-    [optimisticCart]
+    [cart, updateCartItem, addCartItem, clearCart]
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

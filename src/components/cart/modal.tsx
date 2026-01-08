@@ -13,26 +13,25 @@ import CloseCart from "./close-cart";
 import { DEFAULT_OPTION } from "@/lib/constants";
 import { DeleteItemButton } from "./delete-item-button";
 import { EditItemQuantityButton } from "./edit-item-quantity-button";
-import { useFormStatus } from "react-dom";
 import LoadingDots from "../loading-dots";
-import { createCartAndSetCookie, redirectToCheckout } from "./actions";
+import { createOrder } from "@/lib/firebase/orders-client";
+import { useAuth } from "@/components/auth/auth-provider";
+import { useRouter } from "next/navigation";
 
 type MerchandiseSearchParams = {
   [key: string]: string;
 };
 
 export default function CartModal() {
-  const { cart, updateCartItem } = useCart();
+  const { cart, updateCartItem, clearCart } = useCart();
+  const { user } = useAuth();
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const quantityRef = useRef(cart?.totalQuantity);
   const openCart = () => setIsOpen(true);
   const closeCart = () => setIsOpen(false);
-
-  useEffect(() => {
-    if (!cart) {
-      createCartAndSetCookie();
-    }
-  }, [cart]);
 
   useEffect(() => {
     if (
@@ -47,6 +46,27 @@ export default function CartModal() {
       quantityRef.current = cart?.totalQuantity;
     }
   }, [isOpen, cart?.totalQuantity, quantityRef]);
+
+  const handleCheckout = async () => {
+    if (!cart || cart.lines.length === 0) return;
+    if (!user) {
+      router.push("/login?redirect=/orders");
+      return;
+    }
+    setIsPlacingOrder(true);
+    setCheckoutError(null);
+    try {
+      const orderId = await createOrder({ cart, user });
+      clearCart();
+      closeCart();
+      router.push(`/orders/${orderId}`);
+    } catch (error) {
+      console.error(error);
+      setCheckoutError("Unable to place order. Please try again.");
+    } finally {
+      setIsPlacingOrder(false);
+    }
+  };
 
   return (
     <>
@@ -136,10 +156,11 @@ export default function CartModal() {
                                   height={64}
                                   alt={
                                     item.merchandise.product.featuredImage
-                                      .altText || item.merchandise.product.title
+                                      ?.altText || item.merchandise.product.title
                                   }
                                   src={
-                                    item.merchandise.product.featuredImage.url
+                                    item.merchandise.product.featuredImage
+                                      ?.url ?? "/Logo.png"
                                   }
                                 />
                               </div>
@@ -212,9 +233,15 @@ export default function CartModal() {
                       />
                     </div>
                   </div>
-                  <form action={redirectToCheckout}>
-                    <CheckoutButton />
-                  </form>
+                  {checkoutError ? (
+                    <p className="mb-3 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-600">
+                      {checkoutError}
+                    </p>
+                  ) : null}
+                  <CheckoutButton
+                    pending={isPlacingOrder}
+                    onClick={handleCheckout}
+                  />
                 </div>
               )}
             </Dialog.Panel>
@@ -225,13 +252,18 @@ export default function CartModal() {
   );
 }
 
-function CheckoutButton() {
-  const { pending } = useFormStatus();
-
+function CheckoutButton({
+  pending,
+  onClick,
+}: {
+  pending: boolean;
+  onClick: () => void;
+}) {
   return (
     <button
       className="block w-full rounded-full bg-blue-600 p-3 text-center text-sm font-medium text-white opacity-90 hover:opacity-100"
-      type="submit"
+      type="button"
+      onClick={onClick}
       disabled={pending}
     >
       {pending ? <LoadingDots className="bg-white" /> : "Proceed to Checkout"}

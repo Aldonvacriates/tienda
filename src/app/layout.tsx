@@ -4,10 +4,9 @@ import "./globals.css";
 import { Navbar } from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
 import { CartProvider } from "@/components/cart/cart-context";
-import { cookies } from "next/headers";
-import { getCart } from "@/lib/shopify";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next"
+import { AuthProvider } from "@/components/auth/auth-provider";
 
 
 
@@ -41,21 +40,21 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const cartId = (await (cookies())).get("cartId")?.value;
-  const cart = getCart(cartId);
   return (
     <html lang="en">
       <body className={inter.className}>
-        <CartProvider cartPromise={cart}>
-          <Navbar />
-          {children}
-          <Footer />
-        </CartProvider>
+        <AuthProvider>
+          <CartProvider>
+            <Navbar />
+            {children}
+            <Footer />
+          </CartProvider>
+        </AuthProvider>
         <Analytics />
         <SpeedInsights/>
       </body>
